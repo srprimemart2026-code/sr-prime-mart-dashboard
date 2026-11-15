@@ -1,254 +1,243 @@
-:root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --secondary: #0f172a;
-    --bg-light: #f1f5f9;
-    --white: #ffffff;
-    --text-dark: #1e293b;
-    --text-muted: #64748b;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+let products = JSON.parse(localStorage.getItem('sr_products')) || [
+    { id: 101, name: "Men's Bar Bracelet (Black/Silver)", price: 650, stock: 25 },
+    { id: 102, name: "Premium Leather Wallet", price: 850, stock: 15 }
+];
+
+let orders = JSON.parse(localStorage.getItem('sr_orders_v2')) || [
+    { id: 1, name: "রাকিব হাসান", phone: "01711000000", address: "মিরপুর-১০, ঢাকা", product: "Men's Bar Bracelet (Black/Silver)", qty: 1, total: 650, courier: "Pathao Courier", source: "Facebook Page", status: "Delivered" },
+    { id: 2, name: "তানভীর আহমেদ", phone: "01812000000", address: "আগ্রাবাদ, চট্টগ্রাম", product: "Premium Leather Wallet", qty: 1, total: 850, courier: "Steadfast Courier", source: "Website", status: "Pending" }
+];
+
+window.onload = function() {
+    const savedKey = localStorage.getItem('sr_gemini_key');
+    if (!savedKey) {
+        document.getElementById('apiModal').style.display = 'flex';
+    } else {
+        updateKeyStatus(true);
+        document.getElementById('geminiApiKey').value = savedKey;
+    }
+    renderAll();
+};
+
+function activateAI() {
+    const key = document.getElementById('initialApiKey').value.trim();
+    if (!key) return alert('দয়া করে আপনার API Key পেস্ট করুন!');
+    localStorage.setItem('sr_gemini_key', key);
+    document.getElementById('geminiApiKey').value = key;
+    document.getElementById('apiModal').style.display = 'none';
+    updateKeyStatus(true);
+    alert('অভিনন্দন! আপনার AI বিজনেস অ্যাসিস্ট্যান্ট এখন পুরোপুরি সক্রিয়।');
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+function openModal() { document.getElementById('apiModal').style.display = 'flex'; }
+function closeModal() { document.getElementById('apiModal').style.display = 'none'; }
+
+function updateKeyStatus(isConnected) {
+    const badge = document.getElementById('aiStatusBadge');
+    if (isConnected) {
+        badge.className = 'badge badge-delivered';
+        badge.innerText = '● Gemini AI কানেক্টেড';
+    }
 }
 
-body {
-    background-color: var(--bg-light);
-    color: var(--text-dark);
-    display: flex;
-    min-height: 100vh;
+function switchTab(tabId, element) {
+    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    element.classList.add('active');
 }
 
-.modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(15, 23, 42, 0.85);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    padding: 20px;
+function renderAll() {
+    const prodSelect = document.getElementById('prodSelect');
+    const productsTable = document.getElementById('productsTable');
+    prodSelect.innerHTML = '';
+    productsTable.innerHTML = '';
+    let totalStock = 0;
+
+    products.forEach((p, idx) => {
+        totalStock += Number(p.stock);
+        prodSelect.innerHTML += `<option value="${idx}">${p.name} - ৳${p.price} (স্টক: ${p.stock})</option>`;
+        
+        const stockBadge = p.stock > 5 
+            ? `<span class="badge badge-delivered">${p.stock} টি আছে</span>` 
+            : `<span class="badge badge-danger">লো স্টক (${p.stock} টি)</span>`;
+            
+        productsTable.innerHTML += `
+            <tr>
+                <td><strong>${p.name}</strong></td>
+                <td>৳ ${p.price}</td>
+                <td>${stockBadge}</td>
+                <td>
+                    <button style="padding:4px 8px; font-size:12px;" onclick="restockProduct(${idx})">+৫ স্টক</button>
+                    <button style="padding:4px 8px; font-size:12px; background:var(--danger);" onclick="deleteProduct(${idx})">মুছুন</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    const allTable = document.getElementById('allOrdersTable');
+    allTable.innerHTML = '';
+    let totalSales = 0;
+    let pendingCount = 0;
+
+    orders.forEach((o, index) => {
+        totalSales += Number(o.total);
+        if (o.status === 'Pending') pendingCount++;
+        let badgeClass = o.status === 'Delivered' ? 'badge-delivered' : (o.status === 'Shipped' ? 'badge-shipped' : 'badge-pending');
+
+        allTable.innerHTML += `
+            <tr>
+                <td><strong>${o.name}</strong><br><small style="color:var(--primary)">${o.source}</small></td>
+                <td>${o.phone}<br><small>${o.address}</small></td>
+                <td>${o.product} (x${o.qty})</td>
+                <td>৳ ${o.total}</td>
+                <td>${o.courier}</td>
+                <td><span class="badge ${badgeClass}">${o.status}</span></td>
+                <td>
+                    <button style="padding: 4px 8px; font-size: 12px; background: var(--success);" onclick="updateStatus(${index})">স্ট্যাটাস</button>
+                    <button style="padding: 4px 8px; font-size: 12px; background: var(--danger);" onclick="deleteOrder(${index})">মুছুন</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById('totalOrders').innerText = orders.length;
+    document.getElementById('totalSales').innerText = '৳ ' + totalSales;
+    document.getElementById('pendingOrders').innerText = pendingCount;
+    document.getElementById('totalStock').innerText = totalStock;
+
+    localStorage.setItem('sr_products', JSON.stringify(products));
+    localStorage.setItem('sr_orders_v2', JSON.stringify(orders));
 }
 
-.modal-box {
-    background: var(--white);
-    padding: 30px;
-    border-radius: 16px;
-    max-width: 480px;
-    width: 100%;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-    text-align: center;
+function addProduct() {
+    const name = document.getElementById('newProdName').value.trim();
+    const price = Number(document.getElementById('newProdPrice').value);
+    const stock = Number(document.getElementById('newProdStock').value);
+    if (!name || !price) return alert('প্রোডাক্টের নাম ও দাম দিন!');
+    products.push({ id: Date.now(), name, price, stock: stock || 0 });
+    document.getElementById('newProdName').value = '';
+    document.getElementById('newProdPrice').value = '';
+    document.getElementById('newProdStock').value = '';
+    renderAll();
 }
 
-.modal-box h2 { color: var(--secondary); margin-bottom: 10px; }
-.modal-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 15px; }
-.full-btn { width: 100%; padding: 12px; margin-top: 10px; }
-.skip-text { margin-top: 12px; font-size: 13px; cursor: pointer; text-decoration: underline; }
+function restockProduct(idx) { products[idx].stock += 5; renderAll(); }
+function deleteProduct(idx) { if (confirm('মুছে ফেলবেন?')) { products.splice(idx, 1); renderAll(); } }
 
-.sidebar {
-    width: 260px;
-    background-color: var(--secondary);
-    color: var(--white);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    height: 100vh;
-    overflow-y: auto;
-    z-index: 100;
+function addOrder() {
+    const name = document.getElementById('custName').value.trim();
+    const phone = document.getElementById('custPhone').value.trim();
+    const address = document.getElementById('custAddress').value.trim();
+    const prodIdx = document.getElementById('prodSelect').value;
+    const qty = Number(document.getElementById('prodQty').value) || 1;
+    const courier = document.getElementById('courierName').value;
+    const source = document.getElementById('orderSource').value;
+    const status = document.getElementById('orderStatus').value;
+
+    if (!name || !phone || !address) return alert('সব তথ্য পূরণ করুন!');
+    const selectedProd = products[prodIdx];
+    if (selectedProd.stock >= qty) selectedProd.stock -= qty;
+
+    orders.unshift({
+        id: Date.now(), name, phone, address,
+        product: selectedProd.name, qty,
+        total: selectedProd.price * qty, courier, source, status
+    });
+
+    document.getElementById('custName').value = '';
+    document.getElementById('custPhone').value = '';
+    document.getElementById('custAddress').value = '';
+    renderAll();
+    alert('অর্ডার সেভ হয়েছে!');
 }
 
-.brand {
-    font-size: 20px;
-    font-weight: 700;
-    color: #38bdf8;
-    margin-bottom: 25px;
-    border-bottom: 1px solid #334155;
-    padding-bottom: 15px;
+function updateStatus(index) {
+    const statuses = ['Pending', 'Shipped', 'Delivered'];
+    orders[index].status = statuses[(statuses.indexOf(orders[index].status) + 1) % statuses.length];
+    renderAll();
 }
 
-.nav-item {
-    padding: 12px 15px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.2s;
-    font-size: 14px;
-    font-weight: 500;
+function deleteOrder(index) { if (confirm('মুছে ফেলবেন?')) { orders.splice(index, 1); renderAll(); } }
+
+function copyText(id) {
+    const el = document.getElementById(id);
+    el.select();
+    navigator.clipboard.writeText(el.value);
+    alert('কপি হয়েছে!');
 }
 
-.nav-item:hover, .nav-item.active { background-color: var(--primary); }
-
-.main-content {
-    margin-left: 260px;
-    flex: 1;
-    padding: 25px;
-    max-width: 100%;
+function saveApiKey() {
+    const key = document.getElementById('geminiApiKey').value.trim();
+    localStorage.setItem('sr_gemini_key', key);
+    updateKeyStatus(true);
+    alert('API Key আপডেট হয়েছে!');
 }
 
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--white);
-    padding: 15px 25px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    margin-bottom: 25px;
-    flex-wrap: wrap;
-    gap: 10px;
+function exportData() {
+    const blob = new Blob([JSON.stringify({ orders, products }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'SR_PRIME_MART_Backup.json';
+    a.click();
 }
 
-.muted-text { color: var(--text-muted); font-size: 13px; }
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 20px;
-    margin-bottom: 25px;
+function appendMsg(text, isUser = false) {
+    const box = document.getElementById('chatBox');
+    const div = document.createElement('div');
+    div.className = isUser ? 'msg msg-user' : 'msg msg-ai';
+    div.innerText = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
 }
 
-.stat-card {
-    background: var(--white);
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    border-left: 4px solid var(--primary);
+function quickCommand(cmd) {
+    document.getElementById('aiInput').value = cmd;
+    sendToAI();
 }
 
-.border-success { border-left-color: var(--success); }
-.border-warning { border-left-color: var(--warning); }
-.border-purple { border-left-color: #8b5cf6; }
+async function sendToAI() {
+    const input = document.getElementById('aiInput');
+    const prompt = input.value.trim();
+    if (!prompt) return;
 
-.stat-card h3 { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-.stat-card p { font-size: 24px; font-weight: 700; margin-top: 5px; }
+    appendMsg(prompt, true);
+    input.value = '';
 
-.section { display: none; }
-.section.active { display: block; }
+    const apiKey = localStorage.getItem('sr_gemini_key');
+    if (!apiKey) {
+        openModal();
+        return appendMsg('দয়া করে পপআপ বক্সে আপনার Gemini API Key পেস্ট করে AI অ্যাসিস্ট্যান্ট চালু করুন।', false);
+    }
 
-.card {
-    background: var(--white);
-    padding: 22px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    margin-bottom: 25px;
-    overflow-x: auto;
-}
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.innerText = 'লিখছে...';
 
-.card h2 {
-    margin-bottom: 15px;
-    font-size: 17px;
-    font-weight: 600;
-    border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
+    try {
+        const businessContext = `You are the dedicated AI Business Manager for 'S.R. PRIME MART', an online e-commerce and Facebook page business in Bangladesh owned by Shakib Ahmad. 
+        Logistics partners: Pathao Courier and Steadfast Courier. Currency: BDT (৳).
+        Live Business Data:
+        - Products & Stock: ${JSON.stringify(products)}
+        - Recent Orders: ${JSON.stringify(orders)}
+        Always respond in clear, helpful, natural Bengali. Perform calculations, draft customer messages, create Facebook posts, or analyze orders based on this live data.
+        User Command: ${prompt}`;
 
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
-}
+        // লেটেস্ট gemini-2.5-flash মডেল ব্যবহার করা হয়েছে
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: businessContext }] }] })
+        });
 
-input, select, textarea {
-    width: 100%;
-    padding: 11px 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    font-size: 14px;
-    outline: none;
-}
-
-input:focus, select:focus, textarea:focus { border-color: var(--primary); }
-
-button {
-    background-color: var(--primary);
-    color: var(--white);
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: 0.2s;
-}
-
-button:hover { background-color: var(--primary-dark); }
-.dark-btn { font-size: 12px; padding: 6px 12px; background: var(--secondary); }
-.small-btn { margin-top: 8px; font-size: 12px; padding: 6px 12px; }
-.success-btn { background: var(--success); }
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    min-width: 650px;
-}
-
-th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-th { background-color: #f8fafc; font-weight: 600; }
-
-.badge {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.badge-pending { background: #fef3c7; color: #92400e; }
-.badge-shipped { background: #dbeafe; color: #1e40af; }
-.badge-delivered { background: #d1fae5; color: #065f46; }
-.badge-danger { background: #fee2e2; color: #991b1b; }
-
-.ai-chat-box {
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    height: 380px;
-    overflow-y: auto;
-    padding: 15px;
-    background: #f8fafc;
-    margin-bottom: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.msg {
-    padding: 12px 16px;
-    border-radius: 12px;
-    max-width: 85%;
-    line-height: 1.6;
-    font-size: 14px;
-    white-space: pre-line;
-}
-
-.msg-ai { background: #e0e7ff; color: #1e1b4b; align-self: flex-start; }
-.msg-user { background: var(--primary); color: white; align-self: flex-end; }
-
-.quick-prompts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-.quick-btn { background: #e2e8f0; color: var(--text-dark); font-size: 13px; padding: 7px 13px; font-weight: 500; }
-.quick-btn:hover { background: #cbd5e1; }
-
-.chat-input-area { display: flex; gap: 10px; }
-.template-group { margin-bottom: 18px; }
-.template-group textarea { margin-top: 6px; }
-.settings-row { display: flex; gap: 10px; max-width: 600px; }
-
-@media (max-width: 768px) {
-    .sidebar { width: 100%; height: auto; position: relative; }
-    .main-content { margin-left: 0; padding: 15px; }
-    body { flex-direction: column; }
+        const data = await response.json();
+        if (data.error) {
+            appendMsg(`API Error: ${data.error.message}`, false);
+        } else {
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'কোনো উত্তর পাওয়া যায়নি।';
+            appendMsg(reply, false);
+        }
+    } catch (err) {
+        appendMsg('নেটওয়ার্ক সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন।', false);
+    }
+    sendBtn.innerText = 'পাঠান 🚀';
 }
