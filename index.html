@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>S.R. PRIME MART - AI Business Manager</title>
+    <title>S.R. PRIME MART - AI Auto-Reply Bot & Manager</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,10 +11,10 @@
     <!-- API Key সেটআপ পপআপ -->
     <div id="apiModal" class="modal-overlay" style="display: none;">
         <div class="modal-box">
-            <h2>🤖 AI অ্যাসিস্ট্যান্ট অ্যাক্টিভ করুন</h2>
-            <p>আপনার S.R. PRIME MART AI অ্যাসিস্ট্যান্ট চালু করতে আপনার Gemini API Key-টি নিচে পেস্ট করুন:</p>
+            <h2>🤖 AI অটো-রিপ্লাই বট অ্যাক্টিভ করুন</h2>
+            <p>আপনার S.R. PRIME MART AI অ্যাসিস্ট্যান্ট ও অটো-রিপ্লাই বট চালু করতে আপনার Gemini API Key-টি নিচে পেস্ট করুন:</p>
             <input type="password" id="initialApiKey" placeholder="এখানে আপনার API Key পেস্ট করুন...">
-            <button class="full-btn" onclick="activateAI()">🚀 AI অ্যাসিস্ট্যান্ট চালু করুন</button>
+            <button class="full-btn" onclick="activateAI()">🚀 বট চালু করুন</button>
             <p class="skip-text" onclick="closeModal()">পরে সেট করব (বেসিক মোডে চালান)</p>
         </div>
     </div>
@@ -23,9 +23,10 @@
     <div class="sidebar">
         <div class="brand">⚡ S.R. PRIME MART</div>
         <div class="nav-item active" onclick="switchTab('ai-hub', this)">🤖 AI সুপার অ্যাসিস্ট্যান্ট</div>
+        <div class="nav-item" onclick="switchTab('auto-bot', this)">💬 কাস্টমার অটো-রিপ্লাই বট</div>
         <div class="nav-item" onclick="switchTab('orders', this)">📦 অর্ডার ও কুরিয়ার CRM</div>
         <div class="nav-item" onclick="switchTab('products', this)">🛍️ ওয়েবসাইট ও স্টক</div>
-        <div class="nav-item" onclick="switchTab('fb-page', this)">📱 ফেসবুক পেজ অটোমেশন</div>
+        <div class="nav-item" onclick="switchTab('fb-page', this)">📱 ফেসবুক পেজ টেমপ্লেট</div>
         <div class="nav-item" onclick="switchTab('settings', this)">⚙️ সেটিংস ও ব্যাকআপ</div>
     </div>
 
@@ -34,7 +35,7 @@
         <div class="header">
             <div>
                 <h2>স্বাগতম, Shakib Ahmad</h2>
-                <small class="muted-text">S.R. PRIME MART — ওয়েবসাইট, পেজ এবং কাস্টমার ম্যানেজমেন্ট</small>
+                <small class="muted-text">S.R. PRIME MART — ওয়েবসাইট, পেজ এবং অটো-রিপ্লাই ম্যানেজমেন্ট</small>
             </div>
             <div>
                 <span id="aiStatusBadge" class="badge badge-pending" onclick="openModal()">● API Key সেট করুন</span>
@@ -73,21 +74,40 @@
                     <button class="quick-btn" onclick="quickCommand('আমার স্টকে থাকা প্রোডাক্টগুলো নিয়ে ফেসবুক পেজের জন্য একটি হাই-কনভার্টিং সেলস পোস্ট লিখো')">✍️ ফেসবুক সেলস পোস্ট</button>
                     <button class="quick-btn" onclick="quickCommand('ইনবক্সে প্রোডাক্টের দাম ও ডেলিভারি চার্জ জানতে চাওয়া কাস্টমারের জন্য একটি স্মার্ট রিপ্লাই লিখো')">💬 ইনবক্স অটো-রিপ্লাই</button>
                     <button class="quick-btn" onclick="quickCommand('আমার পেন্ডিং অর্ডারগুলোর কাস্টমারদের পাঠানোর জন্য Pathao এবং Steadfast কুরিয়ার কনফার্মেশন SMS লিখো')">🚚 কুরিয়ার SMS তৈরি</button>
-                    <button class="quick-btn" onclick="quickCommand('S.R. PRIME MART ওয়েবসাইট এবং ফেসবুক পেজের সেলস দ্বিগুণ করার জন্য ৩টি বাস্তবসম্মত মার্কেটিং আইডিয়া দাও')">📈 সেলস গ্রোথ আইডিয়া</button>
                 </div>
 
                 <div class="ai-chat-box" id="chatBox">
-                    <div class="msg msg-ai">আসসালামু আলাইকুম Shakib! আমি আপনার S.R. PRIME MART-এর পার্সোনাল AI ম্যানেজার। আপনার অর্ডার, স্টক এবং কুরিয়ার ম্যানেজ করতে প্রস্তুত।</div>
+                    <div class="msg msg-ai">আসসালামু আলাইকুম Shakib! আমি আপনার S.R. PRIME MART-এর AI ম্যানেজার ও অটো-রিপ্লাই বট। আপনার কমান্ডের অপেক্ষায় আছি।</div>
                 </div>
 
                 <div class="chat-input-area">
-                    <input type="text" id="aiInput" placeholder="এখানে আপনার প্রশ্ন বা নির্দেশ লিখুন..." onkeypress="if(event.key==='Enter') sendToAI()">
+                    <input type="textד" id="aiInput" placeholder="এখানে আপনার প্রশ্ন বা নির্দেশ লিখুন..." onkeypress="if(event.key==='Enter') sendToAI()">
                     <button onclick="sendToAI()" id="sendBtn">পাঠান 🚀</button>
                 </div>
             </div>
         </div>
 
-        <!-- সেকশন ২: অর্ডার ও কুরিয়ার CRM -->
+        <!-- সেকশন ২: কাস্টমার অটো-রিপ্লাই বট সিমুলেটর -->
+        <div id="auto-bot" class="section">
+            <div class="card">
+                <h2>
+                    <span>💬 কাস্টমার মেসেঞ্জার অটো-রিপ্লাই বট সিমুলেটর</span>
+                    <button class="dark-btn" onclick="clearBotChat()">বট চ্যাট ক্লিয়ার করুন</button>
+                </h2>
+                <p class="muted-text" style="margin-bottom: 15px;">কাস্টমার আপনার পেজে যেভাবে মেসেজ পাঠায় (যেমন: "ভাই এটার দাম কত?", "ঢাকার বাইরে ডেলিভারি চার্জ কত?"), নিচে তা লিখে টেস্ট করুন। আপনার বট স্বয়ংক্রিয়ভাবে সঠিক উত্তর দিয়ে দেবে!</p>
+
+                <div class="ai-chat-box" id="botChatBox">
+                    <div class="msg msg-ai">🤖 অটো-রিপ্লাই বট লাইভ আছে! নিচের বক্সে কাস্টমারের মেসেজ লিখে পাঠান, বট সাথে সাথে উত্তর বানিয়ে দেবে।</div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" id="customerMsgInput" placeholder="কাস্টমারের মেসেজ লিখুন (যেমন: ভাই ব্রেসলেটটার দাম কত?)..." onkeypress="if(event.key==='Enter') testAutoReply()">
+                    <button onclick="testAutoReply()" id="botSendBtn">অটো-রিপ্লাই পাঠান 🤖</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- সেকশন ৩: অর্ডার ও কুরিয়ার CRM -->
         <div id="orders" class="section">
             <div class="card">
                 <h2>➕ নতুন কাস্টমার অর্ডার যুক্ত করুন</h2>
@@ -133,7 +153,7 @@
             </div>
         </div>
 
-        <!-- সেকশন ৩: প্রোডাক্ট ও ইনভেন্টরি -->
+        <!-- সেকশন ৪: প্রোডাক্ট ও ইনভেন্টরি -->
         <div id="products" class="section">
             <div class="card">
                 <h2>🛍️ নতুন প্রোডাক্ট যুক্ত করুন</h2>
@@ -161,7 +181,7 @@
             </div>
         </div>
 
-        <!-- সেকশন ৪: ফেসবুক পেজ অটোমেশন -->
+        <!-- সেকশন ৫: ফেসবুক পেজ টেমপ্লেট -->
         <div id="fb-page" class="section">
             <div class="card">
                 <h2>📱 ফেসবুক পেজ রেডিমেড অটো-রিপ্লাই টেমপ্লেট</h2>
@@ -179,7 +199,7 @@
             </div>
         </div>
 
-        <!-- সেকশন ৫: সেটিংস ও ব্যাকআপ -->
+        <!-- সেকশন ৬: সেটিংস ও ব্যাকআপ -->
         <div id="settings" class="section">
             <div class="card">
                 <h2>⚙️ Gemini API Key পরিবর্তন / আপডেট</h2>
