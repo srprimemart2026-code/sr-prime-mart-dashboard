@@ -26,7 +26,7 @@ function activateAI() {
     document.getElementById('geminiApiKey').value = key;
     document.getElementById('apiModal').style.display = 'none';
     updateKeyStatus(true);
-    alert('অভিনন্দন! আপনার AI বিজনেস অ্যাসিস্ট্যান্ট এখন পুরোপুরি সক্রিয়।');
+    alert('অভিনন্দন! আপনার AI অটো-রিপ্লাই বট সক্রিয় হয়েছে।');
 }
 
 function openModal() { document.getElementById('apiModal').style.display = 'flex'; }
@@ -182,8 +182,8 @@ function exportData() {
     a.click();
 }
 
-function appendMsg(text, isUser = false) {
-    const box = document.getElementById('chatBox');
+function appendMsg(boxId, text, isUser = false) {
+    const box = document.getElementById(boxId);
     const div = document.createElement('div');
     div.className = isUser ? 'msg msg-user' : 'msg msg-ai';
     div.innerText = text;
@@ -196,31 +196,23 @@ function quickCommand(cmd) {
     sendToAI();
 }
 
+// AI Assistant Chat Handler
 async function sendToAI() {
     const input = document.getElementById('aiInput');
     const prompt = input.value.trim();
     if (!prompt) return;
 
-    appendMsg(prompt, true);
+    appendMsg('chatBox', prompt, true);
     input.value = '';
 
     const apiKey = localStorage.getItem('sr_gemini_key');
     if (!apiKey) {
         openModal();
-        return appendMsg('দয়া করে পপআপ বক্সে আপনার Gemini API Key পেস্ট করে AI অ্যাসিস্ট্যান্ট চালু করুন।', false);
+        return appendMsg('chatBox', 'দয়া করে পপআপ বক্সে আপনার Gemini API Key পেস্ট করুন।', false);
     }
 
-    const sendBtn = document.getElementById('sendBtn');
-    sendBtn.innerText = 'লিখছে...';
-
     try {
-        const businessContext = `You are the dedicated AI Business Manager for 'S.R. PRIME MART', an online e-commerce and Facebook page business in Bangladesh owned by Shakib Ahmad. 
-        Logistics partners: Pathao Courier and Steadfast Courier. Currency: BDT (৳).
-        Live Business Data:
-        - Products & Stock: ${JSON.stringify(products)}
-        - Recent Orders: ${JSON.stringify(orders)}
-        Always respond in clear, helpful, natural Bengali. Perform calculations, draft customer messages, create Facebook posts, or analyze orders based on this live data.
-        User Command: ${prompt}`;
+        const businessContext = `You are the AI Business Manager for 'S.R. PRIME MART', an e-commerce business in Bangladesh owned by Shakib Ahmad. Logistics: Pathao & Steadfast Courier. Currency: BDT. Products: ${JSON.stringify(products)}. Orders: ${JSON.stringify(orders)}. Answer in helpful, natural Bengali. Command: ${prompt}`;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
@@ -229,14 +221,49 @@ async function sendToAI() {
         });
 
         const data = await response.json();
-        if (data.error) {
-            appendMsg(`API Error: ${data.error.message}`, false);
-        } else {
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'কোনো উত্তর পাওয়া যায়নি।';
-            appendMsg(reply, false);
-        }
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'কোনো উত্তর পাওয়া যায়নি।';
+        appendMsg('chatBox', reply, false);
     } catch (err) {
-        appendMsg('নেটওয়ার্ক সমস্যা হয়েছে। ইন্টারনেট কানেকশন চেক করুন।', false);
+        appendMsg('chatBox', 'নেটওয়ার্ক সমস্যা হয়েছে।', false);
     }
-    sendBtn.innerText = 'পাঠান 🚀';
+}
+
+// Customer Auto-Reply Bot Handler
+function clearBotChat() {
+    document.getElementById('botChatBox').innerHTML = '<div class="msg msg-ai">🤖 অটো-রিপ্লাই বট চ্যাট রিসেট করা হয়েছে। কাস্টমারের মেসেজ লিখে টেস্ট করুন।</div>';
+}
+
+async function testAutoReply() {
+    const input = document.getElementById('customerMsgInput');
+    const customerMsg = input.value.trim();
+    if (!customerMsg) return;
+
+    appendMsg('botChatBox', customerMsg, true);
+    input.value = '';
+
+    const apiKey = localStorage.getItem('sr_gemini_key');
+    if (!apiKey) {
+        openModal();
+        return appendMsg('botChatBox', 'দয়া করে প্রথমে আপনার Gemini API Key সেট করুন।', false);
+    }
+
+    try {
+        const botPrompt = `You are the automated customer service chatbot for 'S.R. PRIME MART' (an e-commerce store in Bangladesh owned by Shakib Ahmad). 
+        Current product catalog & prices: ${JSON.stringify(products)}. 
+        Delivery Info: Inside Dhaka delivery charge 70 BDT (24-48 hours), Outside Dhaka 130 BDT (48-72 hours) via Pathao and Steadfast Courier. Cash on delivery available.
+        A customer just sent this message in inbox: "${customerMsg}".
+        Act as a polite, professional e-commerce auto-reply chatbot. Give a direct, friendly, and helpful reply in natural Bengali, asking for their name, address, and phone number to confirm the order if they want to buy.`;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: botPrompt }] }] })
+        });
+
+        const data = await response.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'আসসালামু আলাইকুম! S.R. PRIME MART-এ আপনাকে স্বাগতম। আপনার অর্ডারটি কনফার্ম করতে আপনার নাম, ঠিকানা ও ফোন নম্বর দিন।';
+        appendMsg('botChatBox', reply, false);
+    } catch (err) {
+        appendMsg('botChatBox', 'অটো-রিপ্লাই দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।', false);
+    }
 }
