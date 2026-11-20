@@ -21,7 +21,7 @@ const statusText = document.getElementById("statusText");
 function updateStatus() {
   const key = localStorage.getItem("sr_gemini_key");
   if (key && key.trim().length > 10) {
-    statusText.textContent = "Online – Live Vision AI Active (Photo Analysis Ready)";
+    statusText.textContent = "Online – Live Vision AI Active (Auto-Model Ready)";
     geminiApiKeyInput.value = key;
   } else {
     statusText.textContent = "Online – Add Gemini API Key in '⚙️ AI Key' to analyze uploaded photos";
@@ -34,6 +34,7 @@ apiKeyToggleBtn.addEventListener("click", () => {
 
 saveApiKeyBtn.addEventListener("click", () => {
   const val = geminiApiKeyInput.value.trim();
+  localStorage.removeItem("sr_cached_gemini_model");
   if (val) {
     localStorage.setItem("sr_gemini_key", val);
   } else {
@@ -224,7 +225,6 @@ function renderTab(tabId) {
     document.querySelector(".action-row").style.display = "grid";
   }
 
-  // Photo upload listeners for Product Report & Market Analysis
   const photoInput = document.getElementById("productPhoto") || document.getElementById("marketPhoto");
   const previewImg = document.getElementById("photoPreview") || document.getElementById("marketPhotoPreview");
   if (photoInput) {
@@ -246,59 +246,57 @@ function renderTab(tabId) {
   }
 }
 
-// Build Specialized Prompt for Gemini AI (Including Platform Price Comparison)
+// Build Prompt for Gemini AI
 function buildGeminiPrompt(tab) {
   const hint = document.getElementById("extraHint")?.value.trim() || "";
   const price = document.getElementById("sellingPrice")?.value.trim() || "";
 
   if (tab === "product-report" || tab === "market-analysis") {
-    const cat = document.getElementById("categorySelect")?.value.trim() || hint || "Men's Accessory from uploaded image";
+    const cat = document.getElementById("categorySelect")?.value.trim() || hint || "Product from uploaded image";
     const cost = document.getElementById("budgetRange")?.value.trim() || "";
-    return `You are an expert e-commerce business & pricing analyst in Bangladesh for "S.R. PRIME MART" (men's accessories store: bracelets, rings, watches).
-Carefully inspect the uploaded product photo (if provided) and user hints:
+    return `You are an expert e-commerce business & pricing analyst in Bangladesh for "S.R. PRIME MART" (online store).
+Carefully inspect the uploaded product photo (if provided) and user inputs:
 - Product Hint/Category: ${cat}
 - User's Planned Selling Price: ${price ? price + " BDT" : "Not specified"}
-- Sourcing Cost: ${cost ? cost + " BDT" : "Not specified"}
+- Sourcing / Buying Cost: ${cost ? cost + " BDT" : "Not specified"}
 
-Write a detailed, practical report in natural **Bengali (Bangla)** covering these exact sections:
-1. **প্রোডাক্ট পরিচিতি ও কোয়ালিটি বিশ্লেষণ (Product & Visual Analysis):** ছবির প্রোডাক্টটি কী, এর ডিজাইন, ম্যাটেরিয়াল ও লুক কেমন।
-2. **মার্কেটিং অ্যানালাইসিস ও চাহিদা (Marketing Analysis):** বাংলাদেশে এই প্রোডাক্টটির চাহিদা কেমন, কারা কিনবে (Target Audience), এবং কীভাবে মার্কেটিং করলে বেশি সেল হবে।
+Write a clear, helpful, practical report in natural **Bengali (Bangla)** with these sections:
+1. **প্রোডাক্ট পরিচিতি ও বৈশিষ্ট্য (Product Analysis):** ছবিতে থাকা প্রোডাক্টটি কী, এর ডিজাইন, ব্যবহার ও কোয়ালিটি কেমন।
+2. **মার্কেটিং অ্যানালাইসিস (Marketing Analysis):** বাংলাদেশে এই প্রোডাক্টের চাহিদা, টার্গেট কাস্টমার কারা, এবং কীভাবে বিক্রি বাড়ালে ভালো রেসপন্স পাওয়া যাবে।
 3. **প্ল্যাটফর্ম ভিত্তিক দাম তুলনা (Platform Price Comparison in BDT):**
-   এই একই ধরনের প্রোডাক্ট নিচের ৪টি প্ল্যাটফর্মে সাধারণত কত টাকায় বিক্রি হয় তার আনুমানিক তুলনা দিন:
-   • **AliExpress (চায়না সোর্সিং প্রাইস):** আনুমানিক কত USD ও বাংলাদেশি টাকায় (BDT) পড়ে।
-   • **Daraz Bangladesh:** দারাজে সেলাররা সাধারণত কত টাকায় বিক্রি করে।
-   • **Facebook Marketplace:** মার্কেটপ্লেসে কাস্টমাররা সাধারণত কত দামে কেনে।
-   • **Facebook Online Pages:** ব্র্যান্ডেড/ভালো ফেসবুক পেজগুলোতে কত দামে বিক্রি হয়।
-4. **S.R. PRIME MART-এর জন্য সেরা বিক্রয়মূল্য (Suggested Selling Price):** সব প্ল্যাটফর্ম তুলনা করে আপনার দোকানের জন্য সবচেয়ে লাভজনক ও কাস্টমার-ফ্রেন্ডলি একটি নির্দিষ্ট বিক্রয়মূল্য (BDT) এবং কম্বো অফার আইডিয়া সাজেস্ট করুন।`;
+   • **AliExpress:** আনুমানিক সোর্সিং/বিক্রয় দাম (BDT-তে)
+   • **Daraz Bangladesh:** দারাজে সাধারণত কত টাকায় বিক্রি হয়
+   • **Facebook Marketplace:** মার্কেটপ্লেসে আনুমানিক প্রাইস রেঞ্জ
+   • **Facebook Online Pages:** ফেসবুক পেজে সাধারণত কত দামে সেল হয়
+4. **S.R. PRIME MART-এর জন্য সেরা বিক্রয়মূল্য (Suggested Selling Price):** সব তুলনা করে দোকানের জন্য একটি বাস্তবসম্মত বিক্রয়মূল্য (BDT) সাজেস্ট করুন।`;
   }
 
-  // For other tabs, pass local inputs as structured context
   const localContext = generateLocalResponse(tab);
-  return `You are the business assistant for "S.R. PRIME MART" (Bangladesh online men's accessories store).
-Based on these user inputs, write a clean, actionable response in natural Bengali (Bangla):\n\n${localContext}`;
+  return `You are the business assistant for "S.R. PRIME MART" (Bangladesh online store).
+Based on these details, write a clean, actionable response in natural Bengali (Bangla):\n\n${localContext}`;
 }
 
-// Fallback Local Template Response (Only if API key is missing)
+// Fallback Local Template Response
 function generateLocalResponse(tab) {
   if (tab === "product-report" || tab === "market-analysis") {
-    const hint = document.getElementById("extraHint")?.value.trim() || document.getElementById("categorySelect")?.value.trim() || "Men's Premium Accessory";
+    const hint = document.getElementById("extraHint")?.value.trim() || document.getElementById("categorySelect")?.value.trim() || "Uploaded Product";
     const price = document.getElementById("sellingPrice")?.value.trim() || "350";
-    return `⚠️ [ছবি দেখে রিয়েল-টাইম AI অ্যানালাইসিস পেতে উপরে '⚙️ AI Key' বাটনে একটি valid Gemini API Key দিন]\n\n📦 প্রোডাক্ট: ${hint}\n\n📊 আনুমানিক মার্কেট দাম তুলনা (BDT):\n• AliExpress সোর্সিং: ~১২০ - ১৮০ টাকা\n• Daraz Bangladesh: ~২৫০ - ৩৫০ টাকা\n• Facebook Marketplace: ~২৮০ - ৩৮০ টাকা\n• Facebook Page: ~৩৫০ - ৪৯০ টাকা\n\n✅ S.R. PRIME MART প্রস্তাবিত দাম: ${price} টাকা (+ ডেলিভারি চার্জ)।`;
+    return `📦 প্রোডাক্ট: ${hint}\n\n📊 আনুমানিক মার্কেট দাম তুলনা (BDT):\n• AliExpress সোর্সিং: ~১২০ - ২৫০ টাকা\n• Daraz Bangladesh: ~২৫০ - ৪৫০ টাকা\n• Facebook Marketplace: ~২৮০ - ৪৮০ টাকা\n• Facebook Page: ~৩৫০ - ৫৯০ টাকা\n\n✅ S.R. PRIME MART প্রস্তাবিত দাম: ${price} টাকা (+ ডেলিভারি চার্জ)।`;
   }
   if (tab === "which-first") {
     const stock = document.getElementById("stockList")?.value;
     const budget = document.getElementById("adBudget")?.value;
-    return `🎯 কোন প্রোডাক্ট আগে প্রোমোট করবেন?\nস্টক: ${stock} | বাজেট: ${budget} টাকা\n\n১. কম দামের (৩০০-৪৫০৳) ইউনিক ব্রেসলেট বা রিং আগে Facebook Marketplace-এ লিস্ট করুন।\n২. যে প্রোডাক্টে মেসেজ বেশি আসবে সেটিতে ${budget} টাকা বুস্ট করুন।`;
+    return `🎯 কোন প্রোডাক্ট আগে প্রোমোট করবেন?\nস্টক: ${stock} | বাজেট: ${budget} টাকা\n\n১. যে প্রোডাক্টটির চাহিদা বেশি ও দাম সহনীয়, সেটি আগে Facebook Marketplace-এ লিস্ট করুন।\n২. রেসপন্স দেখে ${budget} টাকা বাজেট দিন।`;
   }
   if (tab === "find-customers") {
-    const prod = document.getElementById("custProduct")?.value.trim() || "Men's Accessories";
+    const prod = document.getElementById("custProduct")?.value.trim() || "Store Product";
     const channel = document.getElementById("sellChannel")?.value;
-    return `👥 কাস্টমার টার্গেটিং (${prod} - ${channel}):\n• বয়স: ১৮-৩০ বছর (ছাত্র, তরুণ চাকরিজীবী ও গিফট বায়ার)।\n• Facebook Ads Interest: Men's fashion, Wristwatch, Jewellery, Gift.`;
+    return `👥 কাস্টমার টার্গেটিং (${prod} - ${channel}):\n• বয়স: ১৮-৩৫ বছর (অনলাইন শপার ও গিফট বায়ার)।\n• Facebook Ads Interest: Online shopping, Gift ideas, Lifestyle & Accessories.`;
   }
   if (tab === "post-script") {
-    const prod = document.getElementById("postProduct")?.value.trim() || "Men's Premium Bracelet";
+    const prod = document.getElementById("postProduct")?.value.trim() || "Featured Product";
     const price = document.getElementById("postPrice")?.value.trim() || "350";
-    return `✍️ S.R. PRIME MART পোস্ট ক্যাপশন:\n\n✨ প্রিমিয়াম কোয়ালিটির ${prod}!\n💰 অফার প্রাইস: মাত্র ${price} টাকা।\n🚚 সারা বাংলাদেশে ক্যাশ অন ডেলিভারি (ঢাকায় ৭০৳, বাইরে ১৩০৳)।\n📩 অর্ডার করতে নাম, ঠিকানা ও ফোন নম্বর ইনবক্স করুন!`;
+    return `✍️ S.R. PRIME MART পোস্ট ক্যাপশন:\n\n✨ নিয়ে এলাম দারুণ কোয়ালিটির ${prod}!\n💰 অফার প্রাইস: মাত্র ${price} টাকা।\n🚚 সারা বাংলাদেশে ক্যাশ অন ডেলিভারি (ঢাকায় ৭০৳, বাইরে ১৩০৳)।\n📩 অর্ডার করতে নাম, ঠিকানা ও ফোন নম্বর ইনবক্স করুন!`;
   }
   if (tab === "price-calculator") {
     const buy = parseFloat(document.getElementById("buyCost")?.value) || 0;
@@ -324,9 +322,51 @@ function generateLocalResponse(tab) {
   return "Ready.";
 }
 
-// Multi-model Gemini API Call (Auto-tries available Flash models)
+// Auto-discover a working Gemini model for this API Key
+async function findWorkingGeminiModel(apiKey) {
+  const cached = localStorage.getItem("sr_cached_gemini_model");
+  if (cached) return cached;
+
+  const listRes = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`
+  );
+  const listData = await listRes.json();
+
+  if (!listRes.ok) {
+    throw new Error(listData.error?.message || "Invalid API Key");
+  }
+
+  const supported = (listData.models || [])
+    .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes("generateContent"))
+    .map(m => m.name.replace(/^models\//, ""));
+
+  const preferredOrder = [
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-flash-latest"
+  ];
+
+  for (const pref of preferredOrder) {
+    if (supported.includes(pref)) {
+      localStorage.setItem("sr_cached_gemini_model", pref);
+      return pref;
+    }
+  }
+
+  const anyFlash = supported.find(name => name.includes("flash") || name.includes("gemini"));
+  if (anyFlash) {
+    localStorage.setItem("sr_cached_gemini_model", anyFlash);
+    return anyFlash;
+  }
+
+  throw new Error("No generateContent model available for this API key.");
+}
+
+// Live Gemini API Call
 async function generateWithGemini(tab) {
   const apiKey = localStorage.getItem("sr_gemini_key").trim();
+  const modelName = await findWorkingGeminiModel(apiKey);
   const promptText = buildGeminiPrompt(tab);
 
   const parts = [{ text: promptText }];
@@ -339,27 +379,23 @@ async function generateWithGemini(tab) {
     });
   }
 
-  const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-  let lastError = "";
-
-  for (const model of modelsToTry) {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts }] })
-      }
-    );
-
-    const data = await response.json();
-    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      return data.candidates[0].content.parts[0].text;
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts }] })
     }
-    lastError = data.error?.message || `HTTP ${response.status}`;
+  );
+
+  const data = await response.json();
+  if (!response.ok) {
+    // Clear cached model if it failed and throw message
+    localStorage.removeItem("sr_cached_gemini_model");
+    throw new Error(data.error?.message || `HTTP ${response.status}`);
   }
 
-  throw new Error(lastError);
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || generateLocalResponse(tab);
 }
 
 // Generate Button Handler
@@ -375,13 +411,15 @@ generateBtn.addEventListener("click", async () => {
       const aiText = await generateWithGemini(currentTab);
       resultBox.textContent = aiText;
     } else {
-      resultBox.textContent = generateLocalResponse(currentTab);
+      resultBox.textContent =
+        "⚠️ [ছবি দেখে রিয়েল-টাইম AI রিপোর্ট পেতে উপরে '⚙️ AI Key' বাটনে Gemini API Key দিন]\n\n" +
+        generateLocalResponse(currentTab);
     }
   } catch (err) {
     resultBox.textContent =
       `❌ API Error: ${err.message}\n\n` +
-      `সমাধান: Google AI Studio (aistudio.google.com) থেকে একটি নতুন API Key তৈরি করে উপরে '⚙️ AI Key' বাটনে বসান, তাহলে আপনার আপলোড করা ছবি দেখে রিপোর্ট তৈরি হবে।\n\n` +
-      `--- নিচে সাধারণ টেমপ্লেট দেওয়া হলো ---\n\n` +
+      `সমাধান: Google AI Studio (aistudio.google.com) থেকে একটি নতুন API Key নিয়ে '⚙️ AI Key' বাটনে সেভ করে আবার চেষ্টা করুন।\n\n` +
+      `--- নিচে প্রাথমিক হিসাব দেওয়া হলো ---\n\n` +
       generateLocalResponse(currentTab);
   } finally {
     generateBtn.disabled = false;
