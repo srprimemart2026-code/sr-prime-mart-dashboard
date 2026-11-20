@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S.R. PRIME MART – AI Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-row">
+        <div class="logo-box">
+          <img src="logo.png" alt="S.R. PRIME MART" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+          <div class="logo-fallback">SR</div>
+        </div>
+        <div class="brand-text">
+          <h1>S.R. PRIME MART – AI Assistant</h1>
+          <p class="subtitle">Help with posts, market analysis and finding customers for men’s accessories (bracelets, rings, watches and more)</p>
+        </div>
+        <button id="apiKeyToggleBtn" class="key-btn" title="Optional: Add Gemini API Key for live image AI">⚙️ AI Key</button>
+      </div>
+
+      <!-- Optional API Key Drawer -->
+      <div id="apiKeyBox" class="api-drawer hidden">
+        <label for="geminiApiKey">Optional Gemini API Key (Saved only in your browser for real photo AI):</label>
+        <div class="api-input-row">
+          <input type="password" id="geminiApiKey" placeholder="Paste Gemini API Key (leave empty to use Built-in Smart Mode)" />
+          <button id="saveApiKeyBtn" class="small-btn">Save Key</button>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <span class="status-dot"></span>
+        <span id="statusText">Online – all tabs work. (Built-in Smart Mode)</span>
+      </div>
+    </header>
+
+    <!-- 10 Navigation Tabs -->
+    <nav class="tabs-grid" id="tabsGrid">
+      <button class="tab-btn active" data-tab="product-report">Product Report</button>
+      <button class="tab-btn" data-tab="market-analysis">Market Analysis</button>
+      <button class="tab-btn" data-tab="which-first">Which Product First</button>
+      <button class="tab-btn" data-tab="find-customers">Find Customers</button>
+      <button class="tab-btn" data-tab="post-script">Post / Script</button>
+      <button class="tab-btn" data-tab="price-calculator">Price Calculator</button>
+      <button class="tab-btn" data-tab="inbox-replies">Inbox Replies</button>
+      <button class="tab-btn" data-tab="reseller-kit">Reseller Kit</button>
+      <button class="tab-btn" data-tab="weekly-plan">Weekly Plan</button>
+      <button class="tab-btn" data-tab="saved">Saved (<span id="savedCount">0</span>)</button>
+    </nav>
+
+    <!-- Main Workspace Card -->
+    <main class="workspace-card">
+      <div id="dynamicFormArea"></div>
+
+      <button id="generateBtn" class="generate-btn">Generate</button>
+
+      <!-- Result Box -->
+      <div class="result-box" id="resultBox">Your result will appear here.</div>
+
+      <!-- Action Buttons -->
+      <div class="action-row">
+        <button id="copyBtn" class="action-btn">Copy</button>
+        <button id="saveBtn" class="action-btn">Save</button>
+        <button id="listenBtn" class="action-btn">Listen</button>
+      </div>
+
+      <!-- Footer Note -->
+      <p class="disclaimer">
+        The market analysis comes from the AI’s general knowledge, not a live web search. Treat prices and demand as estimates and verify them yourself before big decisions. The AI cannot provide real customers’ names or phone numbers. The generated text is written in Bangla.
+      </p>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
