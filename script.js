@@ -20,7 +20,7 @@ const statusText = document.getElementById("statusText");
 function updateStatus() {
   const key = localStorage.getItem("sr_gemini_key");
   if (key && key.trim().length > 10) {
-    statusText.textContent = "Online – Vision AI Ready (v3-clean)";
+    statusText.textContent = "Online – Vision AI Ready (gemini-3.8-flash)";
     geminiApiKeyInput.value = key;
   } else {
     statusText.textContent = "Online – Add Gemini API Key in '⚙️ AI Key' for photo analysis";
@@ -271,7 +271,7 @@ Reply in natural Bengali (Bangla) with:
 
 async function resolveWorkingModel(apiKey) {
   const cached = localStorage.getItem("sr_cached_gemini_model");
-  if (cached) return cached;
+  if (cached && !cached.includes("2.5") && !cached.includes("1.5")) return cached;
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`);
   const data = await res.json();
@@ -282,9 +282,10 @@ async function resolveWorkingModel(apiKey) {
     .map(m => m.name.replace(/^models\//, ""));
 
   const pick =
-    models.find(n => n.includes("2.5-flash")) ||
-    models.find(n => n.includes("2.0-flash")) ||
-    models.find(n => n.includes("flash")) ||
+    models.find(n => n.includes("3.8-flash")) ||
+    models.find(n => n.includes("3.8")) ||
+    models.find(n => n.includes("flash") && !n.includes("2.5") && !n.includes("1.5")) ||
+    models.find(n => !n.includes("2.5") && !n.includes("1.5")) ||
     models[0];
 
   if (!pick) throw new Error("No supported Gemini model found.");
@@ -324,76 +325,4 @@ async function callGemini(tab) {
 }
 
 generateBtn.addEventListener("click", async () => {
-  const key = localStorage.getItem("sr_gemini_key");
-  if (!key || key.trim().length < 10) {
-    resultBox.textContent = "উপরে '⚙️ AI Key' বাটনে ক্লিক করে আপনার Gemini API Key সেভ করুন।";
-    return;
-  }
-
-  generateBtn.disabled = true;
-  generateBtn.textContent = "Analyzing...";
-  resultBox.textContent = "বিশ্লেষণ করা হচ্ছে...";
-
-  try {
-    resultBox.textContent = await callGemini(currentTab);
-  } catch (err) {
-    resultBox.textContent = `Error: ${err.message}`;
-  } finally {
-    generateBtn.disabled = false;
-    generateBtn.textContent = "Generate";
-  }
-});
-
-copyBtn.addEventListener("click", () => {
-  if (!resultBox.textContent || resultBox.textContent === "Your result will appear here.") return;
-  navigator.clipboard.writeText(resultBox.textContent);
-  copyBtn.textContent = "Copied!";
-  setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
-});
-
-saveBtn.addEventListener("click", () => {
-  if (!resultBox.textContent || resultBox.textContent === "Your result will appear here.") return;
-  const items = getSavedItems();
-  items.unshift({ id: Date.now(), tab: currentTab.toUpperCase(), date: new Date().toLocaleDateString(), text: resultBox.textContent });
-  localStorage.setItem("sr_saved_items", JSON.stringify(items));
-  updateSavedCount();
-  saveBtn.textContent = "Saved!";
-  setTimeout(() => (saveBtn.textContent = "Save"), 1500);
-});
-
-function renderSavedList() {
-  const container = document.getElementById("savedListContainer");
-  if (!container) return;
-  const items = getSavedItems();
-  container.innerHTML = items.length
-    ? items.map(i => `<div class="saved-item"><div class="saved-item-head"><span>${i.tab} • ${i.date}</span><button class="delete-saved" onclick="deleteSavedItem(${i.id})">Delete</button></div><div style="white-space:pre-wrap;">${i.text}</div></div>`).join("")
-    : `<p style="color:#94a3b8;">কোনো সেভ করা আইটেম নেই।</p>`;
-}
-
-window.deleteSavedItem = function (id) {
-  localStorage.setItem("sr_saved_items", JSON.stringify(getSavedItems().filter(i => i.id !== id)));
-  updateSavedCount();
-  renderSavedList();
-};
-
-listenBtn.addEventListener("click", () => {
-  if (!resultBox.textContent || resultBox.textContent === "Your result will appear here.") return;
-  if (window.speechSynthesis.speaking) {
-    window.speechSynthesis.cancel();
-    listenBtn.textContent = "Listen";
-    return;
-  }
-  const u = new SpeechSynthesisUtterance(resultBox.textContent);
-  u.lang = "bn-BD";
-  u.onend = () => (listenBtn.textContent = "Listen");
-  listenBtn.textContent = "Stop";
-  window.speechSynthesis.speak(u);
-});
-
-tabsGrid.addEventListener("click", e => {
-  if (e.target.classList.contains("tab-btn")) renderTab(e.target.dataset.tab);
-});
-
-updateStatus();
-updateSavedCount();
-renderTab("product-report");
+  const key = localStorage.getItem
